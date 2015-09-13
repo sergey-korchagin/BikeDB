@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">BikeDB</string>
+
+    <string name="open_weather_maps_app_id">11111</string>g>
+    <string name="action_settings">Settings</string>
+    <string name="no_weather_data">No weather data\nwas found.\nPlease try\n again later</string>
+</resources>
