@@ -22,6 +22,7 @@ public class MainActivity extends FragmentActivity {
                     WindowManager.LayoutParams.FLAG_FULLSCREEN);
         }
 
+        SharedManager.getInstance().init(this);
         DashboardFragment dashboardFragment = new DashboardFragment();
         Utils.replaceFragment(getSupportFragmentManager(), android.R.id.content, dashboardFragment, false);
 

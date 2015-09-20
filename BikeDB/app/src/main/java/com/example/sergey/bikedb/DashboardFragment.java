@@ -89,8 +89,9 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
             locationManager.requestLocationUpdates(locationManager.GPS_PROVIDER, 0, 0, this);
             this.onLocationChanged(null);
 
-
+            //TODO need to change
             location = locationManager.getLastKnownLocation(provider);
+
 
             mLatitude = location.getLatitude();
             mLongitude = location.getLongitude();
@@ -196,13 +197,21 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
     @Override
     public void onMapReady(GoogleMap googleMap) {
         myLocation = new LatLng(mLatitude, mLongitude);
-//TODO need to change to custom
+
+        SharedManager sharedManager = SharedManager.getInstance();
+        if (sharedManager.getInt(Constants.MAP_VIEW_KEY) == 0) {
+            googleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+        } else {
+            googleMap.setMapType(sharedManager.getInt(Constants.MAP_VIEW_KEY));
+        }
+        //TODO need to change to custom
         googleMap.addMarker(new MarkerOptions()
                 .position(myLocation)
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
         CameraPosition cameraPosition = new CameraPosition.Builder()
                 .target(myLocation)
                 .zoom(17)
+                .bearing(90)
                 .build();
         googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 
