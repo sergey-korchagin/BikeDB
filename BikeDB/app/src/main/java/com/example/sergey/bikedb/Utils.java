@@ -1,6 +1,7 @@
 package com.example.sergey.bikedb;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -72,6 +73,35 @@ public class Utils {
                         });
         builder.create().show();
     }
+
+
+    public static void noGpsAlert(final Context context){
+        final AlertDialog.Builder builder =  new AlertDialog.Builder(context);
+        final String message = "No gps location is available, the application will be reloaded!";
+
+        builder.setMessage(message)
+                .setPositiveButton("Reload",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface d, int id) {
+                                d.dismiss();
+                                Intent i = context.getPackageManager()
+                                        .getLaunchIntentForPackage(context.getPackageName());
+                                i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                                context.startActivity(i);
+                            }
+                        })
+                .setNegativeButton("Cancel",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface d, int id) {
+                                d.cancel();
+                            }
+                        });
+
+        builder.create().show();
+    }
+
+
+
 
     public static void replaceFragment(FragmentManager fragmentManager, int container, Fragment fragment, boolean AddToBackStack) {
 

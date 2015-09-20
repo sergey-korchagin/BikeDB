@@ -74,6 +74,8 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
         View root = inflater.inflate(R.layout.dashboard_fragment, container, false);
         mWeatherAlert = (LinearLayout) root.findViewById(R.id.errorWeather);
 
+
+
         mSpeedText = (TextView) root.findViewById(R.id.speedView);
         mCity = (TextView) root.findViewById(R.id.city);
         mTemperature = (TextView) root.findViewById(R.id.temperature);
@@ -91,15 +93,18 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
 
             //TODO need to change
             location = locationManager.getLastKnownLocation(provider);
+            if (location == null) {
+                Utils.noGpsAlert(getActivity());
+             //  locationManager.requestLocationUpdates(locationManager.PASSIVE_PROVIDER, 0, 0, this);
+            } else {
 
+                mLatitude = location.getLatitude();
+                mLongitude = location.getLongitude();
 
-            mLatitude = location.getLatitude();
-            mLongitude = location.getLongitude();
+                city = Utils.getLocationName(mLatitude, mLongitude, getActivity());
+                updateWeatherData(city);
 
-            city = Utils.getLocationName(mLatitude, mLongitude, getActivity());
-            updateWeatherData(city);
-
-
+            }
         } else {
             Utils.enableGps(getActivity());
         }
