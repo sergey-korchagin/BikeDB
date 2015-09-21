@@ -43,6 +43,12 @@ public class SharedManager {
 
     }
 
+    public void put(String key,float value) {
+
+        mSharedPref.edit().putFloat(key, value).apply();
+
+    }
+
     public boolean getBoolean(String key) {
         return mSharedPref.getBoolean(key,false);
     }
@@ -54,7 +60,12 @@ public class SharedManager {
 
     public int getInt(String key) {
 
-        return mSharedPref.getInt(key,0);
+        return mSharedPref.getInt(key, 0);
+    }
+
+    public float getFloat(String key) {
+
+        return mSharedPref.getFloat(key,0f);
     }
 
 

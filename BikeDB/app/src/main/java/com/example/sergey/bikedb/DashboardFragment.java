@@ -2,7 +2,6 @@ package com.example.sergey.bikedb;
 
 
 import android.content.Context;
-import android.graphics.Color;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
@@ -11,8 +10,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.text.Layout;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,18 +20,19 @@ import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
-import com.google.android.gms.maps.model.Circle;
-import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolygonOptions;
 
 import org.json.JSONObject;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
 
 /**
  * Created by serge_000 on 09/09/2015.
@@ -47,6 +45,9 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
     TextView mCity;
     TextView mTemperature;
     TextView mDescription;
+    TextView distanceView;
+    TextView mTime;
+    TextView mTripTime;
     Handler handler;
 
     String city;
@@ -61,6 +62,15 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
 
     LatLng myLocation;
 
+    float mStartTime;
+    float mEndTime;
+    float movingTime;
+    boolean startedMoving;
+    float distance;
+    float prevDistance;
+    SharedManager sharedManager;
+
+    GoogleMap mGoogleMap;
 
     public DashboardFragment() {
         handler = new Handler();
@@ -72,8 +82,13 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
         View root = inflater.inflate(R.layout.dashboard_fragment, container, false);
-        mWeatherAlert = (LinearLayout) root.findViewById(R.id.errorWeather);
 
+        sharedManager = SharedManager.getInstance();
+        mWeatherAlert = (LinearLayout) root.findViewById(R.id.errorWeather);
+        startedMoving =false;
+        movingTime = 0;
+        mTime = (TextView)root.findViewById(R.id.timeView);
+        showTime();
 
 
         mSpeedText = (TextView) root.findViewById(R.id.speedView);
@@ -81,6 +96,14 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
         mTemperature = (TextView) root.findViewById(R.id.temperature);
         mSettingsButton = (ImageView) root.findViewById(R.id.settingsButon);
         mDescription = (TextView) root.findViewById(R.id.description);
+        mTripTime=(TextView) root.findViewById(R.id.tripTimeView);
+
+
+        distanceView =(TextView) root.findViewById(R.id.distanseText);
+        prevDistance = sharedManager.getFloat(Constants.DISTANCE);
+        String formattedStringDistance = String.format("%.02f", prevDistance);
+        distanceView.setText(formattedStringDistance);
+
         mSettingsButton.setOnClickListener(this);
         LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
         Criteria criteria = new Criteria();
@@ -89,7 +112,8 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
         if (locationManager.isProviderEnabled(provider)) {
 
             locationManager.requestLocationUpdates(locationManager.GPS_PROVIDER, 0, 0, this);
-            this.onLocationChanged(null);
+
+          //  this.onLocationChanged(null);
 
             //TODO need to change
             location = locationManager.getLastKnownLocation(provider);
@@ -103,6 +127,7 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
 
                 city = Utils.getLocationName(mLatitude, mLongitude, getActivity());
                 updateWeatherData(city);
+
 
             }
         } else {
@@ -121,10 +146,42 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
         if (location == null) {
             mSpeedText.setText("-.-");
         } else {
-            float currentSpeed = location.getSpeed();
+            float currentSpeed = location.getSpeed() *3.6f;
             String formattedString = String.format("%.02f", currentSpeed);
             mSpeedText.setText(formattedString);
+
+            if(currentSpeed>0.1 && !startedMoving){
+                mStartTime = System.currentTimeMillis();
+                startedMoving = true;
+            }else if(currentSpeed >=0 && startedMoving){
+                mEndTime = System.currentTimeMillis();
+            }
+
+            if(mEndTime>0) {
+                movingTime = ((mEndTime - mStartTime) / (60 * 60 * 1000));
+                distance = currentSpeed * movingTime;
+                String formattedString2 = String.format("%.02f", distance + prevDistance);
+                distanceView.setText(formattedString2);
+                String formattedString3 = String.format("%.02f", movingTime);
+                mTripTime.setText(formattedString3);
+                sharedManager.put(Constants.DISTANCE, distance + prevDistance);
+            }
+
+
+            mLatitude = location.getLatitude();
+            mLongitude = location.getLongitude();
+            if(mGoogleMap != null){
+                mGoogleMap.clear();
+                initMap(mGoogleMap);
+            }
+
         }
+    }
+
+    private void showTime(){
+        Calendar cal = Calendar.getInstance(Locale.getDefault());
+        String currTime = new SimpleDateFormat("HH:mm").format(cal.getTime());
+        mTime.setText(currTime);
     }
 
 
@@ -185,7 +242,16 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
 
     @Override
     public void onProviderDisabled(String s) {
+        Utils.enableGps(getActivity());
 
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        startedMoving = false;
+        movingTime = 0;
+        prevDistance = sharedManager.getFloat(Constants.DISTANCE);
     }
 
     @Override
@@ -202,17 +268,17 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
     @Override
     public void onMapReady(GoogleMap googleMap) {
         myLocation = new LatLng(mLatitude, mLongitude);
-
+        mGoogleMap = googleMap;
         SharedManager sharedManager = SharedManager.getInstance();
         if (sharedManager.getInt(Constants.MAP_VIEW_KEY) == 0) {
             googleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
         } else {
             googleMap.setMapType(sharedManager.getInt(Constants.MAP_VIEW_KEY));
         }
-        //TODO need to change to custom
         googleMap.addMarker(new MarkerOptions()
                 .position(myLocation)
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+                        //    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.bicycle_marker)));
         CameraPosition cameraPosition = new CameraPosition.Builder()
                 .target(myLocation)
                 .zoom(17)
@@ -220,7 +286,20 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
                 .build();
         googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 
+    }
+
+    private void initMap(GoogleMap googleMap){
+        myLocation = new LatLng(mLatitude, mLongitude);
+        googleMap.addMarker(new MarkerOptions()
+                .position(myLocation)
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.bicycle_marker)));
+        CameraPosition cameraPosition = new CameraPosition.Builder()
+                .target(myLocation)
+                .zoom(17)
+                .build();
 
     }
+
+
 
 }

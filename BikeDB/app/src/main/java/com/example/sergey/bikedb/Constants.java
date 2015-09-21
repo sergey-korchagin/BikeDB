@@ -11,6 +11,8 @@ public class Constants {
     public final static String MAP_VIEW_KEY = "map_view_key";
     public final static int MAP_SATELLITE = GoogleMap.MAP_TYPE_SATELLITE;
     public final static int MAP_NORMAL = GoogleMap.MAP_TYPE_NORMAL;
+    public final static String DISTANCE = "distance";
+
 
 
 

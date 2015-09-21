@@ -100,7 +100,27 @@ public class Utils {
         builder.create().show();
     }
 
+    public static void restoreDistance(final Context context){
+        final AlertDialog.Builder builder =  new AlertDialog.Builder(context);
+        final String message = "Are you sure want to restore distance?";
 
+        builder.setMessage(message)
+                .setPositiveButton("Yes",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface d, int id) {
+                                SharedManager sharedManager = SharedManager.getInstance();
+                                sharedManager.put(Constants.DISTANCE,0f);
+                                d.dismiss();
+                            }
+                        })
+                .setNegativeButton("No",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface d, int id) {
+                                d.cancel();
+                            }
+                        });
+        builder.create().show();
+    }
 
 
     public static void replaceFragment(FragmentManager fragmentManager, int container, Fragment fragment, boolean AddToBackStack) {
