@@ -2,6 +2,7 @@ package com.example.sergey.bikedb;
 
 
 import android.content.Context;
+import android.graphics.Typeface;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
@@ -122,6 +123,8 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
 
 
         mSpeedText = (TextView) root.findViewById(R.id.speedView);
+        Typeface font = Typeface.createFromAsset(getActivity().getAssets(), "fonts/radioland.ttf");
+        mSpeedText.setTypeface(font);
         mCity = (TextView) root.findViewById(R.id.city);
         mTemperature = (TextView) root.findViewById(R.id.temperature);
         mSettingsButton = (ImageView) root.findViewById(R.id.settingsButon);
@@ -180,7 +183,7 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
             mSpeedText.setText("-.-");
         } else {
             float currentSpeed = location.getSpeed() * 3.6f;
-            String formattedString = String.format("%.02f", currentSpeed);
+            String formattedString = String.format("%.1f", currentSpeed);
             mSpeedText.setText(formattedString);
 
             if (currentSpeed > 0.1 && !startedMoving) {

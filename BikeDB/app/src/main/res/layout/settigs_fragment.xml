@@ -194,7 +194,18 @@
             android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="1"></LinearLayout>
+            android:layout_weight="1">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:text="@string/about"
+                android:layout_marginLeft="10dp"
+                android:clickable="true"
+                android:textColor="@drawable/button_selector"
+                android:layout_gravity="center_vertical"
+                android:id="@+id/aboutUs" />
+        </LinearLayout>
         <View
             android:layout_width="fill_parent"
             android:layout_height="1dp"

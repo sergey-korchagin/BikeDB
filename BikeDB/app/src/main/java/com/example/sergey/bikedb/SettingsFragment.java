@@ -27,6 +27,7 @@ public class SettingsFragment extends Fragment implements View.OnClickListener {
     TextView mRestoreTimeButton;
     SharedManager sharedManager;
     TextView mContactUs;
+    TextView mAboutUs;
 
     @Nullable
     @Override
@@ -52,6 +53,9 @@ public class SettingsFragment extends Fragment implements View.OnClickListener {
 
         mRestoreTimeButton = (TextView) root.findViewById(R.id.restoreTimeButton);
         mRestoreTimeButton.setOnClickListener(this);
+
+        mAboutUs = (TextView) root.findViewById(R.id.aboutUs);
+        mAboutUs.setOnClickListener(this);
 
         initRadioButtons();
         return root;
@@ -97,6 +101,8 @@ public class SettingsFragment extends Fragment implements View.OnClickListener {
             startActivity(Intent.createChooser(emailIntent, "Send email..."));
         }else if(mRestoreTimeButton.getId()==v.getId()){
             Utils.restoreTime(getActivity());
+        }else if(mAboutUs.getId() == v.getId()){
+            Utils.aboutDialog(getActivity());
         }
 
     }

@@ -52,6 +52,22 @@ public class Utils {
 
     }
 
+    public static void aboutDialog(final Context context){
+        final AlertDialog.Builder builder =  new AlertDialog.Builder(context);
+        final String action = Settings.ACTION_LOCATION_SOURCE_SETTINGS;
+        final String message = "About text will be here later, bla bla bla bla bla, And it will be many usable info here";
+
+        builder.setMessage(message)
+                .setPositiveButton("Ok",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface d, int id) {
+                                d.cancel();
+                            }
+                        });
+        builder.create().show();
+
+    }
+
     public static void enableGps(final Context context){
         final AlertDialog.Builder builder =  new AlertDialog.Builder(context);
         final String action = Settings.ACTION_LOCATION_SOURCE_SETTINGS;
