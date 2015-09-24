@@ -198,6 +198,7 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
                 distance = currentSpeed * movingTime;
                 tmpDist.setText("Dist " + Float.toString(distance)+" Time " + Float.toString(movingTime));
                 float tmp = distance + prevDistance;
+                tmp = tmp/10;
                 String formattedString2 = String.format("%.02f", tmp);
                 distanceView.setText(formattedString2);
                 String formattedString3 = String.format("%.02f", movingTime);
