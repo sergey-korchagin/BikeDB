@@ -17,6 +17,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.android.volley.toolbox.NetworkImageView;
 import com.example.sergey.bikedb.interfaces.ErrorResponseListener;
 import com.example.sergey.bikedb.interfaces.ResponseListener;
 import com.example.sergey.bikedb.manager.DataManager;
@@ -50,7 +51,14 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
     TextView mTime;
     TextView mTripTime;
     TextView mCountry;
+    NetworkImageView mIcon;
     Handler handler;
+
+    //debug
+    TextView tmpDist;
+
+    //end debug
+
 
     String city;
     double mLatitude;
@@ -88,6 +96,15 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
         View root = inflater.inflate(R.layout.dashboard_fragment, container, false);
+//Debug
+        tmpDist = (TextView)root.findViewById(R.id.tmpDist);
+        tmpDist.setText("No moving now");
+
+
+
+        //end debug
+
+
 
         cal = Calendar.getInstance(Locale.getDefault());
 
@@ -99,6 +116,9 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
         movingTime = sharedManager.getFloat(Constants.TRIP_TIME);
         mTime = (TextView) root.findViewById(R.id.timeView);
         showTime();
+
+        mIcon = (NetworkImageView)root.findViewById(R.id.iconView);
+
 
 
         mSpeedText = (TextView) root.findViewById(R.id.speedView);
@@ -176,11 +196,13 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
                     currentSpeed = 0.0001f;
                 }
                 distance = currentSpeed * movingTime;
-                String formattedString2 = String.format("%.02f", distance + prevDistance);
+                tmpDist.setText("Dist " + Float.toString(distance)+" Time " + Float.toString(movingTime));
+                float tmp = distance + prevDistance;
+                String formattedString2 = String.format("%.02f", tmp);
                 distanceView.setText(formattedString2);
                 String formattedString3 = String.format("%.02f", movingTime);
                 mTripTime.setText(formattedString3);
-                sharedManager.put(Constants.DISTANCE, distance + prevDistance);
+                sharedManager.put(Constants.DISTANCE, tmp);
             }
 
 
@@ -294,7 +316,8 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
         }
 
         mCountry.setText(dataManager.getWeatherData().getSys().getCountry());
-        mWeatherAlert.setVisibility(View.GONE);
+        mIcon.setImageUrl("http://openweathermap.org/img/w/" + dataManager.getWeatherData().getWeather().get(0).getIcon() + ".png", volleyWrapper.getImageLoader());
+                mWeatherAlert.setVisibility(View.GONE);
 
     }
 
