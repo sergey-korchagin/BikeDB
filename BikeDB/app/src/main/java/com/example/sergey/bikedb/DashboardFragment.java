@@ -304,21 +304,26 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
 
     @Override
     public void onResponseListener() {
-        String shortCity = dataManager.getWeatherData().getName();
-        if (shortCity.length() > 9) {
-            mCity.setTextSize(15);
-        }
-        mCity.setText(shortCity);
-        mTemperature.setText(dataManager.getWeatherData().getMain().getTemp() + "℃");
-        mDescription.setText(dataManager.getWeatherData().getWeather().get(0).getDescription());
-        if (shortCity.length() > 9) {
-            mDescription.setTextSize(15);
-        }
 
-        mCountry.setText(dataManager.getWeatherData().getSys().getCountry());
-        mIcon.setImageUrl("http://openweathermap.org/img/w/" + dataManager.getWeatherData().getWeather().get(0).getIcon() + ".png", volleyWrapper.getImageLoader());
-                mWeatherAlert.setVisibility(View.GONE);
+        if(dataManager.getWeatherData().getCod().equals("200")) {
+            String shortCity = dataManager.getWeatherData().getName();
+            if (shortCity.length() > 9) {
+                mCity.setTextSize(15);
+            }
+            mCity.setText(shortCity);
+            mTemperature.setText(dataManager.getWeatherData().getMain().getTemp() + "℃");
+            mDescription.setText(dataManager.getWeatherData().getWeather().get(0).getDescription());
+            if (shortCity.length() > 9) {
+                mDescription.setTextSize(15);
+            }
 
+            mCountry.setText(dataManager.getWeatherData().getSys().getCountry());
+            mIcon.setImageUrl("http://openweathermap.org/img/w/" + dataManager.getWeatherData().getWeather().get(0).getIcon() + ".png", volleyWrapper.getImageLoader());
+            mWeatherAlert.setVisibility(View.GONE);
+        }
+        else{
+            onResponseListener();
+        }
     }
 
     @Override
