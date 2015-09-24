@@ -52,9 +52,28 @@ public class Utils {
 
     }
 
+    public static String getCountry(double lattitude, double longitude, Context context){
+        Geocoder gcd = new Geocoder(context, Locale.getDefault());
+        try {
+            List<Address> addresses = gcd.getFromLocation(lattitude, longitude, 1);
+
+            if (addresses.size() > 0) {
+
+                return addresses.get(0).getCountryName();
+
+
+            }
+        }
+        catch (IOException e){
+            e.printStackTrace();
+        }
+       return  "Not Found";
+    }
+
+
+
     public static void aboutDialog(final Context context){
         final AlertDialog.Builder builder =  new AlertDialog.Builder(context);
-        final String action = Settings.ACTION_LOCATION_SOURCE_SETTINGS;
         final String message = "About text will be here later, bla bla bla bla bla, And it will be many usable info here";
 
         builder.setMessage(message)

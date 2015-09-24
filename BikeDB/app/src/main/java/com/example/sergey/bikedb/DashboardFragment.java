@@ -97,7 +97,7 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
         View root = inflater.inflate(R.layout.dashboard_fragment, container, false);
-//Debug
+        //Debug
         tmpDist = (TextView)root.findViewById(R.id.tmpDist);
         tmpDist.setText("No moving now");
 
@@ -321,7 +321,9 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
                 mDescription.setTextSize(15);
             }
 
-            mCountry.setText(dataManager.getWeatherData().getSys().getCountry());
+           // mCountry.setText(dataManager.getWeatherData().getSys().getCountry());
+            mCountry.setText((Utils.getCountry(mLatitude,mLongitude,getActivity())));
+
             mIcon.setImageUrl("http://openweathermap.org/img/w/" + dataManager.getWeatherData().getWeather().get(0).getIcon() + ".png", volleyWrapper.getImageLoader());
             mWeatherAlert.setVisibility(View.GONE);
         }
