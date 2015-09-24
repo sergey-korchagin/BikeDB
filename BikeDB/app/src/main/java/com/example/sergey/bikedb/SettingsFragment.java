@@ -1,10 +1,7 @@
 package com.example.sergey.bikedb;
 
 
-import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -12,14 +9,11 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RadioButton;
 import android.widget.TextView;
 
-import com.google.android.gms.maps.GoogleMap;
-
-import java.util.concurrent.RecursiveAction;
+import com.example.sergey.bikedb.manager.SharedManager;
 
 /**
  * Created by serge_000 on 09/09/2015.
@@ -30,6 +24,7 @@ public class SettingsFragment extends Fragment implements View.OnClickListener {
     RadioButton mSalelite;
     RadioButton mMap;
     TextView mRestoreButton;
+    TextView mRestoreTimeButton;
     SharedManager sharedManager;
     TextView mContactUs;
 
@@ -54,6 +49,9 @@ public class SettingsFragment extends Fragment implements View.OnClickListener {
 
         mContactUs = (TextView) root.findViewById(R.id.contactUs);
         mContactUs.setOnClickListener(this);
+
+        mRestoreTimeButton = (TextView) root.findViewById(R.id.restoreTimeButton);
+        mRestoreTimeButton.setOnClickListener(this);
 
         initRadioButtons();
         return root;
@@ -97,6 +95,8 @@ public class SettingsFragment extends Fragment implements View.OnClickListener {
             emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Feedback from bike app");
             emailIntent.putExtra(Intent.EXTRA_TEXT, "User text: ");
             startActivity(Intent.createChooser(emailIntent, "Send email..."));
+        }else if(mRestoreTimeButton.getId()==v.getId()){
+            Utils.restoreTime(getActivity());
         }
 
     }

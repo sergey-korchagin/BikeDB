@@ -1,4 +1,4 @@
-package com.example.sergey.bikedb;
+package com.example.sergey.bikedb.manager;
 
 import android.content.Context;
 import android.content.SharedPreferences;

@@ -16,8 +16,12 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import com.example.sergey.bikedb.interfaces.ErrorResponseListener;
+import com.example.sergey.bikedb.interfaces.ResponseListener;
+import com.example.sergey.bikedb.manager.DataManager;
+import com.example.sergey.bikedb.manager.SharedManager;
+import com.example.sergey.bikedb.volley.VolleyWrapper;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -26,9 +30,6 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.PolygonOptions;
-
-import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -37,7 +38,7 @@ import java.util.Locale;
 /**
  * Created by serge_000 on 09/09/2015.
  */
-public class DashboardFragment extends Fragment implements LocationListener, View.OnClickListener, OnMapReadyCallback {
+public class DashboardFragment extends Fragment implements LocationListener, View.OnClickListener, OnMapReadyCallback, ResponseListener,ErrorResponseListener {
 
     TextView mSpeedText;
 
@@ -48,6 +49,7 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
     TextView distanceView;
     TextView mTime;
     TextView mTripTime;
+    TextView mCountry;
     Handler handler;
 
     String city;
@@ -71,6 +73,10 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
     SharedManager sharedManager;
 
     GoogleMap mGoogleMap;
+    Calendar cal;
+
+    VolleyWrapper volleyWrapper;
+    DataManager dataManager = DataManager.getInstance();
 
     public DashboardFragment() {
         handler = new Handler();
@@ -83,11 +89,15 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
 
         View root = inflater.inflate(R.layout.dashboard_fragment, container, false);
 
+        cal = Calendar.getInstance(Locale.getDefault());
+
+        volleyWrapper = new VolleyWrapper(getActivity());
+
         sharedManager = SharedManager.getInstance();
         mWeatherAlert = (LinearLayout) root.findViewById(R.id.errorWeather);
-        startedMoving =false;
-        movingTime = 0;
-        mTime = (TextView)root.findViewById(R.id.timeView);
+        startedMoving = false;
+        movingTime = sharedManager.getFloat(Constants.TRIP_TIME);
+        mTime = (TextView) root.findViewById(R.id.timeView);
         showTime();
 
 
@@ -96,10 +106,12 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
         mTemperature = (TextView) root.findViewById(R.id.temperature);
         mSettingsButton = (ImageView) root.findViewById(R.id.settingsButon);
         mDescription = (TextView) root.findViewById(R.id.description);
-        mTripTime=(TextView) root.findViewById(R.id.tripTimeView);
+        mTripTime = (TextView) root.findViewById(R.id.tripTimeView);
+        String formattedStringTime = String.format("%.02f", sharedManager.getFloat(Constants.TRIP_TIME));
+        mTripTime.setText(formattedStringTime);
+        mCountry = (TextView) root.findViewById(R.id.countryView);
 
-
-        distanceView =(TextView) root.findViewById(R.id.distanseText);
+        distanceView = (TextView) root.findViewById(R.id.distanseText);
         prevDistance = sharedManager.getFloat(Constants.DISTANCE);
         String formattedStringDistance = String.format("%.02f", prevDistance);
         distanceView.setText(formattedStringDistance);
@@ -113,20 +125,20 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
 
             locationManager.requestLocationUpdates(locationManager.GPS_PROVIDER, 0, 0, this);
 
-          //  this.onLocationChanged(null);
+            //  this.onLocationChanged(null);
 
             //TODO need to change
             location = locationManager.getLastKnownLocation(provider);
             if (location == null) {
                 Utils.noGpsAlert(getActivity());
-             //  locationManager.requestLocationUpdates(locationManager.PASSIVE_PROVIDER, 0, 0, this);
+                //  locationManager.requestLocationUpdates(locationManager.PASSIVE_PROVIDER, 0, 0, this);
             } else {
 
                 mLatitude = location.getLatitude();
                 mLongitude = location.getLongitude();
 
                 city = Utils.getLocationName(mLatitude, mLongitude, getActivity());
-                updateWeatherData(city);
+                updateWeatherData(city, this,this);
 
 
             }
@@ -141,24 +153,28 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
     }
 
 
+
     @Override
     public void onLocationChanged(Location location) {
         if (location == null) {
             mSpeedText.setText("-.-");
         } else {
-            float currentSpeed = location.getSpeed() *3.6f;
+            float currentSpeed = location.getSpeed() * 3.6f;
             String formattedString = String.format("%.02f", currentSpeed);
             mSpeedText.setText(formattedString);
 
-            if(currentSpeed>0.1 && !startedMoving){
+            if (currentSpeed > 0.1 && !startedMoving) {
                 mStartTime = System.currentTimeMillis();
                 startedMoving = true;
-            }else if(currentSpeed >=0 && startedMoving){
+            } else if (currentSpeed >= 0 && startedMoving) {
                 mEndTime = System.currentTimeMillis();
             }
 
-            if(mEndTime>0) {
+            if (mEndTime > 0) {
                 movingTime = ((mEndTime - mStartTime) / (60 * 60 * 1000));
+                if (currentSpeed == 0) {
+                    currentSpeed = 0.0001f;
+                }
                 distance = currentSpeed * movingTime;
                 String formattedString2 = String.format("%.02f", distance + prevDistance);
                 distanceView.setText(formattedString2);
@@ -170,7 +186,7 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
 
             mLatitude = location.getLatitude();
             mLongitude = location.getLongitude();
-            if(mGoogleMap != null){
+            if (mGoogleMap != null) {
                 mGoogleMap.clear();
                 initMap(mGoogleMap);
             }
@@ -178,55 +194,17 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
         }
     }
 
-    private void showTime(){
-        Calendar cal = Calendar.getInstance(Locale.getDefault());
+    private void showTime() {
         String currTime = new SimpleDateFormat("HH:mm").format(cal.getTime());
         mTime.setText(currTime);
     }
 
 
-    private void updateWeatherData(final String city) {
-        new Thread() {
-            public void run() {
-                final JSONObject json = RemoteFetch.getJSON(getActivity(), city);
-                if (json == null) {
-                    handler.post(new Runnable() {
-                        public void run() {
-                            mWeatherAlert.setVisibility(View.VISIBLE);
+    private void updateWeatherData(String city, ResponseListener responseListener,ErrorResponseListener errorResponseListener) {
 
-                        }
-                    });
-                } else {
-                    handler.post(new Runnable() {
-                        public void run() {
-                            renderWeather(json);
-                        }
-                    });
-                }
-            }
-        }.start();
-    }
+        city = city.replace(" ", "%20");
+        volleyWrapper.request(city, responseListener,errorResponseListener);
 
-    public void renderWeather(JSONObject jsonObject) {
-        try {
-            String shortCity = jsonObject.getString("name");
-            if (shortCity.length() > 9) {
-                mCity.setTextSize(15);
-            }
-            mCity.setText(shortCity);
-            JSONObject main = jsonObject.getJSONObject("main");
-            JSONObject wind = jsonObject.getJSONObject("wind");
-            JSONObject details = jsonObject.getJSONArray("weather").getJSONObject(0);
-
-            mTemperature.setText(main.getString("temp") + "℃");
-            mDescription.setText(details.getString("description"));
-            if (shortCity.length() > 9) {
-                mDescription.setTextSize(15);
-            }
-        } catch (Exception e) {
-            e.toString();
-
-        }
     }
 
 
@@ -250,8 +228,9 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
     public void onResume() {
         super.onResume();
         startedMoving = false;
-        movingTime = 0;
         prevDistance = sharedManager.getFloat(Constants.DISTANCE);
+        movingTime = sharedManager.getFloat(Constants.TRIP_TIME);
+
     }
 
     @Override
@@ -288,7 +267,7 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
 
     }
 
-    private void initMap(GoogleMap googleMap){
+    private void initMap(GoogleMap googleMap) {
         myLocation = new LatLng(mLatitude, mLongitude);
         googleMap.addMarker(new MarkerOptions()
                 .position(myLocation)
@@ -301,5 +280,40 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
     }
 
 
+    @Override
+    public void onResponseListener() {
+        String shortCity = dataManager.getWeatherData().getName();
+        if (shortCity.length() > 9) {
+            mCity.setTextSize(15);
+        }
+        mCity.setText(shortCity);
+        mTemperature.setText(dataManager.getWeatherData().getMain().getTemp() + "℃");
+        mDescription.setText(dataManager.getWeatherData().getWeather().get(0).getDescription());
+        if (shortCity.length() > 9) {
+            mDescription.setTextSize(15);
+        }
 
+        mCountry.setText(dataManager.getWeatherData().getSys().getCountry());
+        mWeatherAlert.setVisibility(View.GONE);
+
+    }
+
+    @Override
+    public void OnErrorResponseListener() {
+        mWeatherAlert.setVisibility(View.VISIBLE);
+    }
+
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        sharedManager.put(Constants.TRIP_TIME, movingTime);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        sharedManager.put(Constants.TRIP_TIME, 0f);
+
+    }
 }

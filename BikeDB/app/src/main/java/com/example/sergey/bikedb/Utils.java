@@ -1,17 +1,17 @@
 package com.example.sergey.bikedb;
 
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.location.Address;
 import android.location.Geocoder;
 import android.provider.Settings;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+
+import com.example.sergey.bikedb.manager.SharedManager;
 
 import java.io.IOException;
 import java.util.List;
@@ -109,7 +109,7 @@ public class Utils {
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface d, int id) {
                                 SharedManager sharedManager = SharedManager.getInstance();
-                                sharedManager.put(Constants.DISTANCE,0f);
+                                sharedManager.put(Constants.DISTANCE, 0f);
                                 d.dismiss();
                             }
                         })
@@ -121,6 +121,29 @@ public class Utils {
                         });
         builder.create().show();
     }
+
+    public static void restoreTime(final Context context){
+        final AlertDialog.Builder builder =  new AlertDialog.Builder(context);
+        final String message = "Are you sure want to restore trip time?";
+
+        builder.setMessage(message)
+                .setPositiveButton("Yes",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface d, int id) {
+                                SharedManager sharedManager = SharedManager.getInstance();
+                                sharedManager.put(Constants.TRIP_TIME,0f);
+                                d.dismiss();
+                            }
+                        })
+                .setNegativeButton("No",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface d, int id) {
+                                d.cancel();
+                            }
+                        });
+        builder.create().show();
+    }
+
 
 
     public static void replaceFragment(FragmentManager fragmentManager, int container, Fragment fragment, boolean AddToBackStack) {
