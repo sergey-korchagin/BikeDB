@@ -33,6 +33,7 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
@@ -60,10 +61,13 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
 
     //end debug
 
+    double EARTH_RADIUS = 6367.45;
 
     String city;
     double mLatitude;
     double mLongitude;
+    double mStartLatitude;
+    double mStartLongtitude;
     String provider;
 
     ImageView mSettingsButton;
@@ -73,12 +77,11 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
 
     LatLng myLocation;
 
-    float mStartTime;
-    float mEndTime;
-    float movingTime;
+
     boolean startedMoving;
-    float distance;
-    float prevDistance;
+    double distance;
+    double prevDistance;
+    double finalDistance;
     SharedManager sharedManager;
 
     GoogleMap mGoogleMap;
@@ -114,7 +117,6 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
         sharedManager = SharedManager.getInstance();
         mWeatherAlert = (LinearLayout) root.findViewById(R.id.errorWeather);
         startedMoving = false;
-        movingTime = sharedManager.getFloat(Constants.TRIP_TIME);
         mTime = (TextView) root.findViewById(R.id.timeView);
         showTime();
 
@@ -135,9 +137,12 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
         mCountry = (TextView) root.findViewById(R.id.countryView);
 
         distanceView = (TextView) root.findViewById(R.id.distanseText);
-        prevDistance = sharedManager.getFloat(Constants.DISTANCE);
-        String formattedStringDistance = String.format("%.02f", prevDistance);
-        distanceView.setText(formattedStringDistance);
+     //   prevDistance = Double.parseDouble(sharedManager.getString(Constants.DISTANCE).trim());
+//
+//        NumberFormat nf = NumberFormat.getInstance(); // get instance
+//        nf.setMaximumFractionDigits(2); // set decimal places
+//        String s1 = nf.format(prevDistance);
+            distanceView.setText("0.00");
 
         mSettingsButton.setOnClickListener(this);
         LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
@@ -150,7 +155,6 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
 
             //  this.onLocationChanged(null);
 
-            //TODO need to change
             location = locationManager.getLastKnownLocation(provider);
             if (location == null) {
                 Utils.noGpsAlert(getActivity());
@@ -159,6 +163,8 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
 
                 mLatitude = location.getLatitude();
                 mLongitude = location.getLongitude();
+                mStartLatitude = location.getLatitude();
+                mStartLongtitude = location.getLongitude();
 
                 city = Utils.getLocationName(mLatitude, mLongitude, getActivity());
                 updateWeatherData(city, this,this);
@@ -179,6 +185,7 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
 
     @Override
     public void onLocationChanged(Location location) {
+        showTime();
         if (location == null) {
             mSpeedText.setText("-.-");
         } else {
@@ -186,38 +193,38 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
             String formattedString = String.format("%.1f", currentSpeed);
             mSpeedText.setText(formattedString);
 
-            if (currentSpeed > 0.1 && !startedMoving) {
-                mStartTime = System.currentTimeMillis();
-                startedMoving = true;
-            } else if (currentSpeed >= 0 && startedMoving) {
-                mEndTime = System.currentTimeMillis();
-            }
-
-            if (mEndTime > 0) {
-                movingTime = ((mEndTime - mStartTime) / (60 * 60 * 1000));
-                if (currentSpeed == 0) {
-                    currentSpeed = 0.0001f;
-                }
-                distance = currentSpeed * movingTime;
-                tmpDist.setText("Dist " + Float.toString(distance)+" Time " + Float.toString(movingTime));
-                float tmp = distance + prevDistance;
-                tmp = tmp/10;
-                String formattedString2 = String.format("%.02f", tmp);
-                distanceView.setText(formattedString2);
-                String formattedString3 = String.format("%.02f", movingTime);
-                mTripTime.setText(formattedString3);
-                sharedManager.put(Constants.DISTANCE, tmp);
-            }
 
 
             mLatitude = location.getLatitude();
             mLongitude = location.getLongitude();
+
+
+            distance = CalculationByDistance(mStartLatitude, mStartLongtitude, mLatitude, mLongitude);
+          //  finalDistance = prevDistance + distance;
+            NumberFormat nf = NumberFormat.getInstance(); // get instance
+            nf.setMaximumFractionDigits(2); // set decimal places
+            String s = nf.format(distance);
+            distanceView.setText(s);
+
             if (mGoogleMap != null) {
                 mGoogleMap.clear();
                 initMap(mGoogleMap);
             }
 
         }
+    }
+
+    public double CalculationByDistance(double initialLat, double initialLong, double finalLat, double finalLong){
+    /*PRE: All the input values are in radians!*/
+
+        double latDiff = finalLat - initialLat;
+        double longDiff = finalLong - initialLong;
+        double earthRadius = 6371; //In Km if you want the distance in km
+
+        double distance = 2*earthRadius*Math.asin(Math.sqrt(Math.pow(Math.sin(latDiff/2.0),2)+Math.cos(initialLat)*Math.cos(finalLat)*Math.pow(Math.sin(longDiff/2),2)));
+
+        return distance;
+
     }
 
     private void showTime() {
@@ -253,9 +260,9 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
     @Override
     public void onResume() {
         super.onResume();
-        startedMoving = false;
-        prevDistance = sharedManager.getFloat(Constants.DISTANCE);
-        movingTime = sharedManager.getFloat(Constants.TRIP_TIME);
+        showTime();
+ //       prevDistance = Double.parseDouble(sharedManager.getString(Constants.DISTANCE));
+
 
     }
 
@@ -338,16 +345,19 @@ public class DashboardFragment extends Fragment implements LocationListener, Vie
     }
 
 
+
+
+
     @Override
     public void onPause() {
         super.onPause();
-        sharedManager.put(Constants.TRIP_TIME, movingTime);
+     //   sharedManager.put(Constants.DISTANCE, Double.toString(finalDistance));
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        sharedManager.put(Constants.TRIP_TIME, 0f);
+     //   sharedManager.put(Constants.DISTANCE, Double.toString(finalDistance));
 
     }
 }
